@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head> 
+<body>
+  <div id="root">
+    <h1>{{ name }}</h1>
+    <h2>{{ description }}</h2>
+  </div>
+</body>
+<script>
+let reg = /\{\{(.+?)\}\}/g;
+function compile(template, data) {
+  let childNodes = template.childNodes;
+  for(let i = 0; i < childNodes.length; i++) {
+    let type = childNodes[i].nodeType;
+    if (type === 3) {
+      let text = childNodes[i].nodeValue;
+      text = text.replace(reg, function(_, g) {
+        let key = g.trim()
+        return data[key]
+      })
+      childNodes[i].nodeValue = text
+    } else if (type === 1) {
+        compile(childNodes[i], data)
+    }
+  }
+ 
+}
+function CustomVue(option) {
+  this._el = option.el;
+  this.$data = option.data;
+  this.$el = this._templateNode = document.querySelector(this._el);
+  this._parentNode = this._templateNode.parentNode;
+  this.render()
+}
+CustomVue.prototype.render = function() {
+  this.compile()
+}
+CustomVue.prototype.compile = function() {
+  console.log('this._templateNode', this._templateNode)
+  let realDom = this._templateNode.cloneNode(true)
+  compile(realDom, this.$data)
+  this.update(realDom)
+}
+CustomVue.prototype.update =function(realDom) {
+  this._parentNode.replaceChild(realDom, this.$el)
+}
+
+let vue = new CustomVue({
+  el: '#root',
+  data: {
+    name: '张三',
+    description: '时代真皮'
+  }
+})
+
+
+
+</script>
+</html>

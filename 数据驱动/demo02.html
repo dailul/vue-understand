@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="../node_modules/vue/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <h1>{{ name }}-{{ description }} {{ name }}</h1>
+        <h2><div><p>{{ name }}</p></div>{{ description }}</h2>
+    </div>
+</body>
+<script>
+    var reg = /\{\{(.+?)\}\}/g
+    let data = {
+        name: '章三',
+        description: '是到周刊'
+    }
+    let tempNode =document.querySelector('#root')
+    let generateNode = tempNode.cloneNode(true)
+    function compile(template, data) {
+      let childNodes = template.childNodes;
+      for(let i = 0; i < childNodes.length; i++) {
+        let type = childNodes[i].nodeType;
+        if (type === 3) {
+          let text = childNodes[i].nodeValue;
+          console.log('text', text)
+
+          text = text.replace(reg, function(_, g) {
+                  let key = g.trim()
+                  return data[key]
+          })
+          childNodes[i].nodeValue = text
+        } else if (type === 1) {
+          compile(childNodes[i], data);
+        }
+      }
+    }
+    compile(generateNode, data)
+    root.parentNode.replaceChild(generateNode, root)
+
+
+</script>
+</html>

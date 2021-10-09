@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head> 
+<body>
+  <div id="root">
+    <h1>{{ name }}</h1>
+    <h2>{{ detail.name }} <div><p><a href="#">{{ name }}</a></p></div>{{ detail.description }}</h2>
+  </div>
+</body>
+<script>
+let reg = /\{\{(.+?)\}\}/g;
+// 编译
+function compile(template, data) {
+  let childNodes = template.childNodes;
+  for(let i = 0; i < childNodes.length; i++) {
+    let type = childNodes[i].nodeType;
+    if (type === 3) {
+      let text = childNodes[i].nodeValue;
+      text = text.replace(reg, function(_, g) {
+        let key = g.trim()
+        return geValueByPath(data, key)
+      })
+      childNodes[i].nodeValue = text
+    } else if (type === 1) {
+        compile(childNodes[i], data)
+    }
+  }
+}
+function geValueByPath(obj, path) {
+  let paths = path.split('.');
+  let res = obj
+  let key;
+  while(key = paths.shift()) {
+    res = res[key]
+  }
+  return res
+
+
+
+}
+function CustomVue(option) {
+  this._el = option.el;
+  this.$data = option.data;
+  this.$el = this._templateNode = document.querySelector(this._el);
+  this._parentNode = this._templateNode.parentNode;
+  this.render()
+}
+CustomVue.prototype.render = function() {
+  this.compile()
+}
+CustomVue.prototype.compile = function() {
+  console.log('this._templateNode', this._templateNode)
+  let realDom = this._templateNode.cloneNode(true)
+  compile(realDom, this.$data)
+  this.update(realDom)
+}
+CustomVue.prototype.update =function(realDom) {
+  this._parentNode.replaceChild(realDom, this.$el)
+}
+
+// let vue = new CustomVue({
+//   el: '#root',
+//   data: {
+//     name: '张三',
+//     detail: {
+//       name: '里斯',
+//       description: '时代真皮'
+//     }
+    
+//   }
+// })
+class VNode {
+  constructor(tag, data, value, type) {
+    this.tag = tag && tag.toLowerCase();
+    this.data = data;
+    this.value = value;
+    this.type = type;
+    this.children = []
+  }
+  appendchild(node) {
+    this.children.push(node)
+  }
+}
+// dom 转为虚拟dom
+function getVNode(node) {
+  let type = node.nodeType;
+  let _vNode = null;
+  if (type === 1) {
+    let nodeName = node.nodeName;
+    let attrs = node.attributes;
+    let _attrObj = {};
+    for(let i = 0; i < attrs.length; i++) {
+      _attrObj[attrs[i].nodeName] = attrs[i].nodeValue;
+    }
+    _vNode = new VNode(nodeName, _attrObj, undefined, type)
+    let childNodes = node.childNodes;
+    for(let i = 0; i < childNodes.length; i++) {
+      _vNode.appendchild(getVNode(childNodes[i]));
+    }
+  } else if (type === 3) {
+    _vNode = new VNode(undefined, undefined, node.nodeValue, type)
+  }
+  return _vNode;
+}
+let root = document.querySelector('#root');
+let vroot = getVNode(root)
+console.log(vroot);
+
+
+// 虚拟dom转化为 dom
+function parseNode(vnode) {
+  let type = vnode.type;
+  let _node = null;
+  if (type === 1) {
+    _node = document.createElement(vnode.tag);
+    let _attrObj = vnode.data;
+    Object.keys(_attrObj).forEach(key => {
+      _node.setAttribute(key, _attrObj[key])
+    });
+    let childVNodes = vnode.children;
+    childVNodes.forEach(subVNode => {
+      console.log('_node', _node);
+      _node.appendChild(parseNode(subVNode))
+    })
+  } else if (type === 3) {
+    _node = document.createTextNode(vnode.value)
+  }
+  return _node;
+}
+let parseroot = parseNode(vroot)
+console.log('parseNode', parseroot)
+</script>
+</html>
